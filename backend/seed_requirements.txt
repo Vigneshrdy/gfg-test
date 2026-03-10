@@ -1,0 +1,4 @@
+# Seed-script dependencies (run separately before starting the server)
+mysql-connector-python==9.1.0
+faker==33.0.0
+passlib[bcrypt]==1.7.4

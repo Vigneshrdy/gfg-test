@@ -1,0 +1,29 @@
+# FastAPI + async MySQL
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+aiomysql==0.2.0
+
+# Config & env
+python-dotenv==1.0.1
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# OpenRouter (OpenAI-compatible via httpx)
+httpx==0.28.1
+
+# Auth
+python-jose[cryptography]==3.3.0
+bcrypt==4.1.3
+
+# File uploads
+python-multipart==0.0.20
+aiofiles==24.1.0
+
+# Data processing (CSV upload)
+pandas==2.2.3
+
+# Seed-script dependencies (run separately before starting the server)
+mysql-connector-python==9.1.0
+faker==33.0.0
+bcrypt==4.1.3
+    

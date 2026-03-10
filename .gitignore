@@ -1,0 +1,105 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# QueryMind — .gitignore
+# ─────────────────────────────────────────────────────────────────────────────
+CREDENTIALS.md
+# ── SecreCts / environment ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+backend/venv
+backend/.env
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+wheels/
+*.whl
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+.env.bak
+
+# Type checking / linting
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytype/
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+coverage.xml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+dist-ssr/
+build/
+.output/
+
+# Vite cache
+.vite/
+
+# TypeScript build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.bak
+*.orig
+*.tmp
+.history/

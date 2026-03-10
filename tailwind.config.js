@@ -1,0 +1,170 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ['class'],
+  content: [
+    './index.html',
+    './src/**/*.{ts,tsx,js,jsx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        'qm-base': '#080B0E',
+        'qm-surface': '#0D1117',
+        'qm-card': '#131920',
+        'qm-border': '#253040',
+        'qm-teal': '#2DD4BF',
+        'qm-teal-bright': '#5EEAD4',
+        'qm-positive': '#34D399',
+        'qm-warning': '#FBBF24',
+        'qm-negative': '#F87171',
+        'qm-info': '#60A5FA',
+        bg: {
+          void: '#080B0E',
+          base: '#0D1117',
+          raised: '#131920',
+          overlay: '#1A232D',
+          sunken: '#090E12',
+        },
+        'border-faint': '#1C2730',
+        'border-default': '#253040',
+        'border-strong': '#344558',
+        accent: {
+          DEFAULT: '#2DD4BF',
+          dim: '#0F3D38',
+          muted: '#1A6B63',
+          base: '#2DD4BF',
+          bright: '#5EEAD4',
+          pop: '#99F6E4',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        positive: { DEFAULT: '#34D399', bg: '#0C2E22' },
+        warning: { DEFAULT: '#FBBF24', bg: '#2D1F07' },
+        negative: { DEFAULT: '#F87171', bg: '#2C0F0F' },
+        info: { DEFAULT: '#60A5FA', bg: '#0C1A2E' },
+        text: {
+          primary: '#E8EDF2',
+          secondary: '#8FA3B8',
+          tertiary: '#4F6478',
+          disabled: '#2D3D4D',
+          accent: '#2DD4BF',
+          inverse: '#080B0E',
+        },
+        chart: {
+          1: '#2DD4BF',
+          2: '#60A5FA',
+          3: '#FB7185',
+          4: '#FBBF24',
+          5: '#A78BFA',
+          6: '#86EFAC',
+          7: '#94A3B8',
+          8: '#FB923C',
+        },
+      },
+      fontFamily: {
+        sans: ["'JetBrains Mono'", "'JetBrains Mono NL'", 'monospace'],
+        mono: ["'JetBrains Mono'", "'JetBrains Mono NL'", 'monospace'],
+        display: ["'JetBrains Mono'", "'JetBrains Mono NL'", 'monospace'],
+        jetbrains: ["'JetBrains Mono'", "'JetBrains Mono NL'", 'monospace'],
+      },
+      boxShadow: {
+        card: '0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3)',
+        modal: '0 8px 40px rgba(0,0,0,0.6)',
+        accent: '0 0 20px rgba(45,212,191,0.15), 0 0 60px rgba(45,212,191,0.05)',
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        pulseGlow: {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(45,212,191,0.4)' },
+          '50%': { boxShadow: '0 0 0 8px rgba(45,212,191,0)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        blobMove: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+        },
+        pulseDot: {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.6', transform: 'scale(1.3)' },
+        },
+        slideDown: {
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        'fade-in-up': 'fadeInUp 0.5s ease-out both',
+        'fade-in': 'fadeIn 0.4s ease-out both',
+        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+        shimmer: 'shimmer 2.5s linear infinite',
+        float: 'float 3s ease-in-out infinite',
+        'blob-move': 'blobMove 8s ease-in-out infinite',
+        'pulse-dot': 'pulseDot 2s ease-in-out infinite',
+        'slide-down': 'slideDown 0.2s ease-out both',
+      },
+    },
+  },
+  plugins: [require('tailwindcss-animate')],
+}

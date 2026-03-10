@@ -1,0 +1,296 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* === New teal color system === */
+    --bg-void: #080B0E;
+    --bg-base: #0D1117;
+    --bg-raised: #131920;
+    --bg-overlay: #1A232D;
+    --bg-sunken: #090E12;
+
+    --border-faint: #1C2730;
+    --border-default: #253040;
+    --border-strong: #344558;
+    --border-accent: #2DD4BF26;
+
+    --accent-dim: #0F3D38;
+    --accent-muted: #1A6B63;
+    --accent-base: #2DD4BF;
+    --accent-bright: #5EEAD4;
+    --accent-pop: #99F6E4;
+
+    --positive: #34D399;
+    --positive-bg: #0C2E22;
+    --warning: #FBBF24;
+    --warning-bg: #2D1F07;
+    --negative: #F87171;
+    --negative-bg: #2C0F0F;
+    --info: #60A5FA;
+    --info-bg: #0C1A2E;
+
+    --text-primary: #E8EDF2;
+    --text-secondary: #8FA3B8;
+    --text-muted: #4F6478;
+    --text-disabled: #2D3D4D;
+    --text-accent: #2DD4BF;
+    --text-inverse: #080B0E;
+
+    --font-base: 'JetBrains Mono', 'JetBrains Mono NL', monospace;
+
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+    --radius-xl: 14px;
+
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3);
+    --shadow-modal: 0 8px 40px rgba(0,0,0,0.6);
+    --shadow-accent: 0 0 20px rgba(45,212,191,0.15), 0 0 60px rgba(45,212,191,0.05);
+
+    /* shadcn/ui CSS variables (mapped to new system) */
+    --background: 216 20% 7%;
+    --foreground: 210 30% 94%;
+    --card: 215 18% 10%;
+    --card-foreground: 210 30% 94%;
+    --popover: 215 18% 10%;
+    --popover-foreground: 210 30% 94%;
+    --primary: 174 61% 51%;
+    --primary-foreground: 216 20% 5%;
+    --secondary: 215 18% 14%;
+    --secondary-foreground: 210 30% 94%;
+    --muted: 215 18% 16%;
+    --muted-foreground: 215 20% 55%;
+    --accent: 215 18% 14%;
+    --accent-foreground: 174 61% 51%;
+    --destructive: 0 84% 70%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 24% 18%;
+    --input: 215 24% 9%;
+    --ring: 174 61% 51%;
+    --radius: 0.625rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg-void);
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', 'JetBrains Mono NL', monospace;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* === Custom Scrollbar === */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-void);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1C2730;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-base);
+  }
+
+  /* === Text Selection === */
+  ::selection {
+    background: rgba(45, 212, 191, 0.3);
+    color: var(--text-primary);
+  }
+}
+
+/* === Keyframe Animations === */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(45, 212, 191, 0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes typewriterBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* === Utility Classes === */
+.font-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-mono-code {
+  font-family: 'DM Mono', 'Fira Code', monospace;
+}
+
+.glass-card {
+  background: rgba(19, 25, 32, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(37, 48, 64, 0.8);
+}
+
+.glass-card-hover {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-card-hover:hover {
+  border-color: rgba(45, 212, 191, 0.3);
+  box-shadow: var(--shadow-accent);
+  transform: translateY(-2px);
+}
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #2DD4BF, #60A5FA, #2DD4BF);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #E8EDF2 0%,
+    #2DD4BF 25%,
+    #E8EDF2 50%,
+    #5EEAD4 75%,
+    #E8EDF2 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+.hero-grid-bg {
+  background-image:
+    linear-gradient(rgba(45, 212, 191, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 212, 191, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.input-glow:focus {
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.3), 0 0 0 4px rgba(45, 212, 191, 0.1);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.btn-press {
+  transition: transform 0.1s ease;
+}
+
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+.step-card-1 { animation: fadeInUp 0.5s ease-out 0ms both; }
+.step-card-2 { animation: fadeInUp 0.5s ease-out 150ms both; }
+.step-card-3 { animation: fadeInUp 0.5s ease-out 300ms both; }
+.step-card-4 { animation: fadeInUp 0.5s ease-out 450ms both; }
+
+.typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  vertical-align: text-bottom;
+  background: #2DD4BF;
+  animation: typewriterBlink 1s ease-in-out infinite;
+  margin-left: 2px;
+}
+
+/* === Sidebar transition === */
+.sidebar-transition {
+  transition: width 0.3s ease, transform 0.3s ease;
+}
+
+/* === Gradient animated border for pro pricing card === */
+.pro-card-border {
+  position: relative;
+  z-index: 0;
+}
+.pro-card-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #2DD4BF, #60A5FA, #5EEAD4, #2DD4BF);
+  background-size: 300% 300%;
+  animation: gradientShift 4s ease infinite;
+  z-index: -1;
+}
+
+/* SQL code block */
+.sql-block {
+  background: #0d0d1a;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* Recharts custom styling */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #1e1e35;
+  stroke-dasharray: 4 4;
+}
+
+.recharts-tooltip-wrapper {
+  z-index: 100;
+}
