@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
+import html2canvas from 'html2canvas'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   AreaChart, Area, ScatterChart, Scatter,
   ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
 } from 'recharts'
-import { Copy, Download, BarChart2, TrendingUp, PieChart as PieIcon, Activity } from 'lucide-react'
+import { Copy, Download, BarChart2, TrendingUp, PieChart as PieIcon, Activity, ImageDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/hooks/use-toast'
@@ -172,6 +173,30 @@ interface ChartCardProps {
 export default function ChartCard({ chart, animationDelay = 0 }: ChartCardProps) {
   const typeInfo = chartTypeLabels[chart.chart_type] || chartTypeLabels.bar
   const Icon = typeInfo.icon
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = useCallback(async () => {
+    const container = cardRef.current
+    if (!container) return
+    setExporting(true)
+    try {
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#131920',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      })
+      const link = document.createElement('a')
+      link.download = `${chart.title.replace(/\s+/g, '-').toLowerCase()}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch {
+      // silently ignore
+    } finally {
+      setExporting(false)
+    }
+  }, [chart.title])
 
   const renderChart = () => {
     switch (chart.chart_type) {
@@ -185,22 +210,31 @@ export default function ChartCard({ chart, animationDelay = 0 }: ChartCardProps)
 
   return (
     <div
-      className="bg-[#16162a] border border-[#1e1e35] rounded-2xl p-5 hover:border-[#6366f1]/30 transition-all duration-300"
+      ref={cardRef}
+      className="bg-[#131920] border border-[#1C2730] rounded-2xl p-5 hover:border-[#2DD4BF]/30 transition-all duration-300"
       style={{ animation: `fadeInUp 0.5s ease-out ${animationDelay}ms both` }}
     >
       {/* Card header */}
       <div className="flex items-start justify-between mb-1 gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-[#e2e8f0] text-sm leading-snug">{chart.title}</h3>
+            <h3 className="font-mono font-semibold text-[#E8EDF2] text-sm leading-snug">{chart.title}</h3>
           </div>
-          <p className="text-xs text-[#94a3b8] leading-relaxed">{chart.description}</p>
+          <p className="text-xs text-[#8FA3B8] leading-relaxed font-mono">{chart.description}</p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Badge variant="secondary" className="hidden sm:inline-flex text-xs gap-1">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <Badge variant="secondary" className="hidden sm:inline-flex text-xs gap-1 font-mono">
             <Icon className="w-3 h-3" />
             {typeInfo.label}
           </Badge>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            title="Export as PNG"
+            className="p-1.5 rounded-lg text-[#4F6478] hover:text-[#2DD4BF] hover:bg-[#0F3D38] transition-colors disabled:opacity-40"
+          >
+            <ImageDown className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 

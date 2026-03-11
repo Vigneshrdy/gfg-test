@@ -114,7 +114,7 @@ export default function CSVUploadModal({ open, onClose, onSuccess }: CSVUploadMo
 
   const typeColors: Record<string, string> = {
     number: 'text-[#6ee7b7] border-[#10b981]/30 bg-[#10b981]/10',
-    date: 'text-[#818cf8] border-[#6366f1]/30 bg-[#6366f1]/10',
+    date: 'text-[#60A5FA] border-[#3B82F6]/30 bg-[#1E3A5F]/40',
     text: 'text-[#fcd34d] border-[#f59e0b]/30 bg-[#f59e0b]/10',
   }
 
@@ -131,10 +131,10 @@ export default function CSVUploadModal({ open, onClose, onSuccess }: CSVUploadMo
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`mt-2 border-2 border-dashed rounded-2xl p-12 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all ${dragOver ? 'border-[#6366f1] bg-[#6366f1]/5' : 'border-[#1e1e35] hover:border-[#6366f1]/40 hover:bg-[#16162a]/50'}`}
+            className={`mt-2 border-2 border-dashed rounded-2xl p-12 flex flex-col items-center justify-center gap-4 cursor-pointer transition-all ${dragOver ? 'border-[#2DD4BF] bg-[#2DD4BF]/5' : 'border-[#1C2730] hover:border-[#2DD4BF]/40 hover:bg-[#0F3D38]/30'}`}
           >
-            <div className="w-16 h-16 rounded-2xl bg-[#6366f1]/10 border border-[#6366f1]/20 flex items-center justify-center animate-float">
-              <Upload className="w-8 h-8 text-[#6366f1]" />
+            <div className="w-16 h-16 rounded-2xl bg-[#0F3D38] border border-[#2DD4BF]/20 flex items-center justify-center animate-float">
+              <Upload className="w-8 h-8 text-[#2DD4BF]" />
             </div>
             <div className="text-center">
               <p className="text-[#e2e8f0] font-medium mb-1">Drop your CSV here, or click to browse</p>
@@ -147,8 +147,8 @@ export default function CSVUploadModal({ open, onClose, onSuccess }: CSVUploadMo
 
         {step === 'preview' && preview && file && (
           <div className="mt-2 space-y-4">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#16162a] border border-[#1e1e35]">
-              <FileText className="w-5 h-5 text-[#6366f1]" />
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#131920] border border-[#1C2730]">
+              <FileText className="w-5 h-5 text-[#2DD4BF] flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-[#e2e8f0]">{file.name}</p>
                 <p className="text-xs text-[#4a4a6a]">{(file.size / 1024).toFixed(1)} KB</p>
@@ -160,8 +160,8 @@ export default function CSVUploadModal({ open, onClose, onSuccess }: CSVUploadMo
 
             {/* Schema */}
             <div>
-              <p className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider mb-2">Detected Schema</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="text-xs font-mono font-semibold text-[#8FA3B8] uppercase tracking-wider mb-2">Detected Schema</p>
+              <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
                 {preview.schema.map(col => (
                   <div key={col.name} className="flex items-center gap-1.5 text-xs">
                     <span className="text-[#e2e8f0] font-mono">{col.name}</span>
@@ -175,21 +175,21 @@ export default function CSVUploadModal({ open, onClose, onSuccess }: CSVUploadMo
 
             {/* Preview table */}
             <div>
-              <p className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider mb-2">Data Preview (first 5 rows)</p>
-              <div className="overflow-x-auto rounded-xl border border-[#1e1e35]">
+              <p className="text-xs font-mono font-semibold text-[#8FA3B8] uppercase tracking-wider mb-2">Data Preview (first 5 rows)</p>
+              <div className="overflow-x-auto overflow-y-auto max-h-48 rounded-xl border border-[#1C2730]">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-[#1e1e35] bg-[#16162a]">
+                    <tr className="border-b border-[#1C2730] bg-[#131920] sticky top-0">
                       {preview.headers.map(h => (
-                        <th key={h} className="px-3 py-2 text-left font-mono text-[#94a3b8] whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2 text-left font-mono text-[#8FA3B8] whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {preview.rows.map((row, i) => (
-                      <tr key={i} className="border-b border-[#1e1e35]/50 hover:bg-[#16162a]/50">
+                      <tr key={i} className="border-b border-[#1C2730]/50 hover:bg-[#131920]/70">
                         {preview.headers.map(h => (
-                          <td key={h} className="px-3 py-2 font-mono text-[#94a3b8] whitespace-nowrap">{row[h]}</td>
+                          <td key={h} className="px-3 py-2 font-mono text-[#8FA3B8] whitespace-nowrap">{row[h]}</td>
                         ))}
                       </tr>
                     ))}
@@ -212,8 +212,8 @@ export default function CSVUploadModal({ open, onClose, onSuccess }: CSVUploadMo
 
         {step === 'processing' && (
           <div className="mt-2 space-y-4 py-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-[#6366f1]/10 border border-[#6366f1]/20 flex items-center justify-center mx-auto">
-              <Upload className="w-8 h-8 text-[#6366f1] animate-bounce" />
+            <div className="w-16 h-16 rounded-2xl bg-[#0F3D38] border border-[#2DD4BF]/20 flex items-center justify-center mx-auto">
+              <Upload className="w-8 h-8 text-[#2DD4BF] animate-bounce" />
             </div>
             <div>
               <p className="text-[#e2e8f0] font-medium mb-1">Uploading and indexing your data...</p>

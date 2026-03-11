@@ -5,8 +5,6 @@ CREDENTIALS.md
 # ── SecreCts / environment ─────────────────────────────────────────────────────
 .env
 .env.local
-.env.*.local
-backend/venv
 backend/.env
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/

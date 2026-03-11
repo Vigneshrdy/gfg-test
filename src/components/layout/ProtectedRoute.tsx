@@ -3,15 +3,15 @@ import { useAuth } from '@/contexts/AuthContext'
 
 function FullscreenLoader() {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#08080f]">
+    <div className="fixed inset-0 flex items-center justify-center bg-[#080B0E]">
       <div className="flex flex-col items-center gap-4">
         <div className="relative">
-          <div className="w-12 h-12 rounded-full border-2 border-[#1e1e35] border-t-[#6366f1] animate-spin" />
+          <div className="w-12 h-12 rounded-full border-2 border-[#1C2730] border-t-[#2DD4BF] animate-spin" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[#6366f1] font-display font-bold text-lg">Q</span>
+            <span className="text-[#2DD4BF] font-mono font-bold text-lg">Q</span>
           </div>
         </div>
-        <p className="text-[#4a4a6a] text-sm font-mono animate-pulse">Loading QueryMind...</p>
+        <p className="text-[#4F6478] text-sm font-mono animate-pulse">Loading QueryMind...</p>
       </div>
     </div>
   )

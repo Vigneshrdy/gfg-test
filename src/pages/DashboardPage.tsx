@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Menu, X, Sparkles, Database, Bell, Settings, LogOut, History,
-  Upload, Plus, Trash2, ChevronDown, BarChart2, FileText, AlertCircle, Clock
+  Upload, Plus, Trash2, ChevronDown, BarChart2, FileText, AlertCircle, Clock,
+  CheckCircle2, XCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +23,7 @@ import CSVUploadModal from '@/components/dashboard/CSVUploadModal'
 import { useAuth } from '@/contexts/AuthContext'
 import { queryDashboard } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
+import { playSuccess, playError, playNotification } from '@/lib/sounds'
 import type { DashboardResponse, QuerySession } from '@/types'
 import { truncate, timeAgo } from '@/lib/utils'
 
@@ -39,10 +41,10 @@ function EmptyState({ onQuerySelect }: { onQuerySelect: (q: string) => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <div className="mb-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-[#6366f1]/10 border border-[#6366f1]/20 flex items-center justify-center mx-auto mb-4 animate-float">
-          <Sparkles className="w-8 h-8 text-[#6366f1]" />
+        <div className="w-16 h-16 rounded-2xl bg-[#0F3D38] border border-[#2DD4BF]/20 flex items-center justify-center mx-auto mb-4 animate-float">
+          <Sparkles className="w-8 h-8 text-[#2DD4BF]" />
         </div>
-        <h2 className="font-display font-bold text-3xl text-[#e2e8f0] mb-3">What would you like to explore?</h2>
+        <h2 className="font-mono font-bold text-3xl text-[#E8EDF2] mb-3">What would you like to explore?</h2>
         <p className="text-[#94a3b8] max-w-md mx-auto text-sm leading-relaxed">
           Ask any business question in plain English and get an instant interactive dashboard.
         </p>
@@ -53,11 +55,11 @@ function EmptyState({ onQuerySelect }: { onQuerySelect: (q: string) => void }) {
           <button
             key={q}
             onClick={() => onQuerySelect(q)}
-            className="glass-card glass-card-hover rounded-xl p-4 text-left cursor-pointer border border-[#1e1e35] hover:border-[#6366f1]/40 group transition-all"
+            className="glass-card glass-card-hover rounded-xl p-4 text-left cursor-pointer border border-[#1C2730] hover:border-[#2DD4BF]/40 group transition-all"
           >
             <div className="flex items-start gap-2">
-              <BarChart2 className="w-4 h-4 text-[#6366f1] flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-              <span className="text-sm text-[#94a3b8] group-hover:text-[#e2e8f0] transition-colors leading-snug">{q}</span>
+              <BarChart2 className="w-4 h-4 text-[#2DD4BF] flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+              <span className="text-sm text-[#8FA3B8] group-hover:text-[#E8EDF2] transition-colors leading-snug">{q}</span>
             </div>
           </button>
         ))}
@@ -82,7 +84,7 @@ function ErrorState({ error, suggestions, onRetry, onSuggestion }: {
         <div className="flex flex-wrap justify-center gap-2 mb-6">
           {suggestions.map(s => (
             <button key={s} onClick={() => onSuggestion(s)}
-              className="px-3 py-2 text-xs border border-[#1e1e35] rounded-full text-[#94a3b8] hover:text-[#e2e8f0] hover:border-[#6366f1]/40 transition-all cursor-pointer">
+              className="px-3 py-2 text-xs border border-[#1C2730] rounded-full text-[#8FA3B8] hover:text-[#E8EDF2] hover:border-[#2DD4BF]/40 transition-all cursor-pointer">
               {s}
             </button>
           ))}
@@ -105,12 +107,12 @@ function DashboardResult({
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3">
-        <div className="w-6 h-6 rounded-full bg-[#6366f1]/20 border border-[#6366f1]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Sparkles className="w-3 h-3 text-[#6366f1]" />
+        <div className="w-6 h-6 rounded-full bg-[#0F3D38] border border-[#2DD4BF]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Sparkles className="w-3 h-3 text-[#2DD4BF]" />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <blockquote className="text-[#e2e8f0] font-medium text-sm border-l-2 border-[#6366f1] pl-3 leading-snug">
+            <blockquote className="text-[#E8EDF2] font-mono font-medium text-sm border-l-2 border-[#2DD4BF] pl-3 leading-snug">
               {session.query}
             </blockquote>
             {!isLatest && (
@@ -151,7 +153,7 @@ function DashboardResult({
                 <button
                   key={s}
                   onClick={() => onFollowUp(s)}
-                  className="px-3 py-1.5 text-xs border border-[#1e1e35] rounded-full text-[#94a3b8] hover:text-[#e2e8f0] hover:border-[#6366f1]/40 hover:bg-[#16162a] transition-all cursor-pointer"
+                  className="px-3 py-1.5 text-xs border border-[#1C2730] rounded-full text-[#8FA3B8] hover:text-[#E8EDF2] hover:border-[#2DD4BF]/40 hover:bg-[#131920] transition-all cursor-pointer"
                 >
                   {s}
                 </button>
@@ -175,7 +177,24 @@ export default function DashboardPage() {
   const [csvSource, setCsvSource] = useState<string | null>(null)
   const [uploadedSchema, setUploadedSchema] = useState<string | null>(null)
   const [errorState, setErrorState] = useState<{ message: string; suggestions?: string[] } | null>(null)
+  const [notifications, setNotifications] = useState<{ id: string; type: 'success' | 'error'; title: string; body: string; seen: boolean }[]>([])
+  const [notifOpen, setNotifOpen] = useState(false)
   const lastQueryRef = useRef('')
+
+  const addNotif = useCallback((type: 'success' | 'error', title: string, body: string) => {
+    setNotifications(prev => [{ id: `n-${Date.now()}`, type, title, body, seen: false }, ...prev].slice(0, 20))
+  }, [])
+
+  // Close notification panel on outside click
+  useEffect(() => {
+    if (!notifOpen) return
+    const handler = (e: MouseEvent) => {
+      const el = document.getElementById('notif-panel-root')
+      if (el && !el.contains(e.target as Node)) setNotifOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [notifOpen])
 
   useEffect(() => { document.title = 'QueryMind — Dashboard' }, [])
 
@@ -207,6 +226,8 @@ export default function DashboardPage() {
       const res: DashboardResponse = await queryDashboard(q, history, uploadedSchema ?? undefined)
 
       if (!res.success) {
+        playError()
+        addNotif('error', 'Query failed', res.error_reason || res.error || 'Query failed')
         setErrorState({ message: res.error_reason || res.error || 'Query failed', suggestions: res.suggestions })
         setLoading(false)
         return
@@ -221,12 +242,16 @@ export default function DashboardPage() {
       }
       saveSessions([newSession, ...sessions])
       setLoading(false)
+      playSuccess()
+      addNotif('success', 'Dashboard ready', `"${q}" generated ${res.charts?.length} charts`)
       toast({ title: 'Dashboard ready!', description: `Generated ${res.charts?.length} charts.` })
     } catch (err) {
+      playError()
+      addNotif('error', 'Query error', String(err))
       setErrorState({ message: String(err) })
       setLoading(false)
     }
-  }, [query, loading, sessions, saveSessions, uploadedSchema])
+  }, [query, loading, sessions, saveSessions, uploadedSchema, addNotif])
 
   const handleLogout = async () => {
     await logout()
@@ -239,17 +264,17 @@ export default function DashboardPage() {
   return (
     <div className="h-screen flex flex-col bg-[#08080f] overflow-hidden">
       {/* === TOP NAVBAR === */}
-      <header className="h-14 flex items-center justify-between px-4 border-b border-[#1e1e35] bg-[#08080f]/95 backdrop-blur-xl flex-shrink-0 z-40">
+      <header className="h-14 flex items-center justify-between px-4 border-b border-[#1C2730] bg-[#080B0E]/95 backdrop-blur-xl flex-shrink-0 z-40">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(o => !o)} className="h-8 w-8">
             {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#6366f1] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#6366f1]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2DD4BF] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2DD4BF]" />
             </span>
-            <span className="font-display font-bold text-[#e2e8f0] hidden sm:block">QueryMind</span>
+            <span className="font-mono font-bold text-[#E8EDF2] hidden sm:block">QueryMind</span>
           </div>
           {sessions.length > 0 && (
             <div className="hidden md:flex items-center gap-1.5 text-xs text-[#4a4a6a]">
@@ -272,9 +297,58 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Bell className="w-4 h-4" />
-          </Button>
+          {/* Notification Bell */}
+          <div className="relative" id="notif-panel-root">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 relative"
+              onClick={() => {
+                setNotifOpen(o => !o)
+                setNotifications(prev => prev.map(n => ({ ...n, seen: true })))
+                playNotification()
+              }}
+            >
+              <Bell className="w-4 h-4" />
+              {notifications.filter(n => !n.seen).length > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#2DD4BF] border border-[#080B0E]" />
+              )}
+            </Button>
+
+            {notifOpen && (
+              <div className="absolute right-0 top-full mt-2 w-80 bg-[#0D1117] border border-[#1C2730] rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[#1C2730]">
+                  <span className="text-xs font-mono font-semibold text-[#8FA3B8] uppercase tracking-widest">Notifications</span>
+                  {notifications.length > 0 && (
+                    <button
+                      className="text-xs text-[#4F6478] hover:text-[#8FA3B8] font-mono transition-colors"
+                      onClick={() => setNotifications([])}
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-[#4F6478] font-mono">No notifications yet</div>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n.id} className={`flex items-start gap-3 px-4 py-3 border-b border-[#1C2730]/60 last:border-0 ${n.seen ? '' : 'bg-[#0F3D38]/20'}`}>
+                        {n.type === 'success'
+                          ? <CheckCircle2 className="w-4 h-4 text-[#2DD4BF] flex-shrink-0 mt-0.5" />
+                          : <XCircle className="w-4 h-4 text-[#ef4444] flex-shrink-0 mt-0.5" />
+                        }
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-mono font-semibold text-[#E8EDF2]">{n.title}</p>
+                          <p className="text-xs text-[#4F6478] font-mono truncate mt-0.5">{n.body}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -302,7 +376,7 @@ export default function DashboardPage() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* === SIDEBAR === */}
-        <aside className={`sidebar-transition flex-shrink-0 border-r border-[#1e1e35] bg-[#0b0b18] flex flex-col ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}>
+        <aside className={`sidebar-transition flex-shrink-0 border-r border-[#1C2730] bg-[#0D1117] flex flex-col ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}>
           <div className="p-3 flex-shrink-0">
             <Button
               className="w-full gap-2 justify-start"
@@ -320,7 +394,7 @@ export default function DashboardPage() {
                 <div className="space-y-1">
                   {sessions.slice(0, 15).map(s => (
                     <div key={s.id}
-                      className="group flex items-center gap-2 p-2.5 rounded-lg hover:bg-[#16162a] transition-colors cursor-pointer">
+                      className="group flex items-center gap-2 p-2.5 rounded-lg hover:bg-[#131920] transition-colors cursor-pointer">
                       <BarChart2 className="w-3.5 h-3.5 text-[#4a4a6a] flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-[#94a3b8] truncate">{truncate(s.query, 38)}</p>
@@ -344,13 +418,13 @@ export default function DashboardPage() {
               <p className="text-xs text-[#4a4a6a] font-mono uppercase tracking-widest mb-2 px-1">Quick Actions</p>
               <div className="space-y-1">
                 <button onClick={() => setCsvModalOpen(true)}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-lg text-[#94a3b8] hover:bg-[#16162a] hover:text-[#e2e8f0] transition-colors text-sm cursor-pointer">
-                  <Upload className="w-3.5 h-3.5 text-[#6366f1]" />
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-lg text-[#8FA3B8] hover:bg-[#131920] hover:text-[#E8EDF2] transition-colors text-sm cursor-pointer">
+                  <Upload className="w-3.5 h-3.5 text-[#2DD4BF]" />
                   Upload CSV
                 </button>
                 <button onClick={() => navigate('/dashboard/history')}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-lg text-[#94a3b8] hover:bg-[#16162a] hover:text-[#e2e8f0] transition-colors text-sm cursor-pointer">
-                  <History className="w-3.5 h-3.5 text-[#6366f1]" />
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-lg text-[#8FA3B8] hover:bg-[#131920] hover:text-[#E8EDF2] transition-colors text-sm cursor-pointer">
+                  <History className="w-3.5 h-3.5 text-[#2DD4BF]" />
                   View History
                 </button>
               </div>
@@ -358,8 +432,8 @@ export default function DashboardPage() {
           </ScrollArea>
 
           {/* User info card */}
-          <div className="p-3 border-t border-[#1e1e35] flex-shrink-0">
-            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#16162a]">
+          <div className="p-3 border-t border-[#1C2730] flex-shrink-0">
+            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#131920]">
               <Avatar className="h-7 w-7">
                 <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
               </Avatar>
@@ -377,7 +451,7 @@ export default function DashboardPage() {
         {/* === MAIN CONTENT === */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Query input always at top */}
-          <div className="flex-shrink-0 p-4 pb-0 border-b border-[#1e1e35] bg-[#08080f]/80 backdrop-blur-sm">
+          <div className="flex-shrink-0 p-4 pb-0 border-b border-[#1C2730] bg-[#080B0E]/80 backdrop-blur-sm">
             <QueryInput
               value={query}
               onChange={setQuery}
@@ -397,10 +471,10 @@ export default function DashboardPage() {
               {loading && (
                 <div>
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="w-6 h-6 rounded-full bg-[#6366f1]/20 border border-[#6366f1]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Sparkles className="w-3 h-3 text-[#6366f1]" />
+                    <div className="w-6 h-6 rounded-full bg-[#0F3D38] border border-[#2DD4BF]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Sparkles className="w-3 h-3 text-[#2DD4BF]" />
                     </div>
-                    <blockquote className="text-[#e2e8f0] font-medium text-sm border-l-2 border-[#6366f1] pl-3">
+                    <blockquote className="text-[#E8EDF2] font-mono font-medium text-sm border-l-2 border-[#2DD4BF] pl-3">
                       {lastQueryRef.current}
                     </blockquote>
                   </div>
@@ -451,6 +525,12 @@ export default function DashboardPage() {
         onSuccess={(name, _schema, tableName, schemaDescription) => {
           setCsvSource(`📄 ${name}`)
           setUploadedSchema(schemaDescription || null)
+          // Clear old sessions so dashboard starts fresh for the new data source
+          saveSessions([])
+          setErrorState(null)
+          setNotifOpen(false)
+          addNotif('success', 'CSV uploaded', `"${name}" is ready to query`)
+          playNotification()
           setCsvModalOpen(false)
         }}
       />

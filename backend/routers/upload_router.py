@@ -1,6 +1,8 @@
 import io
+import math
 import uuid
 
+import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
@@ -84,9 +86,19 @@ async def upload_csv(
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to create table: {exc}")
 
-    # 4. Bulk insert
+    # 4. Bulk insert — sanitise NaN / inf so aiomysql can serialise them
     col_names = [c.name for c in columns_info]
-    rows = [tuple(row) for row in df[col_names].where(pd.notnull(df), None).values.tolist()]
+    safe_df = df[col_names].copy()
+    safe_df = safe_df.replace([np.nan, np.inf, -np.inf], None)
+
+    def _safe(v: object) -> object:
+        if v is None:
+            return None
+        if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+            return None
+        return v
+
+    rows = [tuple(_safe(v) for v in row) for row in safe_df.itertuples(index=False, name=None)]
     try:
         await bulk_insert(table_name, col_names, rows)
     except Exception as exc:

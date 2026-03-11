@@ -36,13 +36,23 @@ Convert the user's natural language business question into:
 - NEVER include DROP, DELETE, UPDATE, INSERT, ALTER, CREATE, TRUNCATE, GRANT
 
 ## CHART SELECTION RULES:
+ALWAYS return 3–4 chart_recommendations. Never return fewer than 2.
+Each chart must use a DIFFERENT chart type or different axis slicing.
+
 - Time trend (month / quarter / year columns present) → "line" or "area"
 - Category comparison, ≤ 8 distinct items → "bar"
 - Category comparison,  > 8 distinct items → "table"
 - Parts of a whole, ≤ 8 segments → "pie"
 - Two numeric metrics with no category → "scatter"
-- Multi-metric overview → recommend 2–3 complementary chart types
+- Multi-metric overview → always recommend 3–4 complementary chart types
 - Detailed row-level data → "table"
+
+BUILD A MINI DASHBOARD: For every question generate charts that together give a full picture:
+  1. The primary trend or ranking (line / bar)
+  2. A composition breakdown (pie / stacked bar)
+  3. A comparison or drill-down (bar / area)
+  4. A detailed summary (bar with a different grouping, or area)
+Adjust axes and groupings between charts so each one reveals something different.
 
 ## RESPONSE FORMAT — STRICT JSON, NO MARKDOWN FENCES:
 If the question is answerable:
