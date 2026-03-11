@@ -5,12 +5,13 @@ import {
   AreaChart, Area, ScatterChart, Scatter,
   ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
 } from 'recharts'
-import { Copy, Download, BarChart2, TrendingUp, PieChart as PieIcon, Activity, ImageDown } from 'lucide-react'
+import { Copy, Download, BarChart2, TrendingUp, PieChart as PieIcon, Activity, ImageDown, Sparkles, X, AlertTriangle, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/hooks/use-toast'
-import type { Chart } from '@/types'
+import type { Chart, Anomaly } from '@/types'
 import { CHART_COLORS } from '@/data/mockData'
+import { explainChart } from '@/lib/api'
 
 // === Custom Tooltip ===
 function CustomTooltip({ active, payload, label }: any) {
@@ -168,13 +169,23 @@ const chartTypeLabels: Record<string, { label: string; icon: React.ElementType }
 interface ChartCardProps {
   chart: Chart
   animationDelay?: number
+  isFeatured?: boolean
+  anomalies?: Anomaly[]
+  originalQuery?: string
 }
 
-export default function ChartCard({ chart, animationDelay = 0 }: ChartCardProps) {
+export default function ChartCard({ chart, animationDelay = 0, isFeatured = false, anomalies = [], originalQuery = '' }: ChartCardProps) {
   const typeInfo = chartTypeLabels[chart.chart_type] || chartTypeLabels.bar
   const Icon = typeInfo.icon
   const cardRef = useRef<HTMLDivElement>(null)
   const [exporting, setExporting] = useState(false)
+  const [explaining, setExplaining] = useState(false)
+  const [explanation, setExplanation] = useState<string | null>(null)
+  const [showExplain, setShowExplain] = useState(false)
+
+  const chartAnomalies = anomalies.filter(a =>
+    chart.data.some(row => String(Object.values(row)[0]) === a.point_label || a.metric in row)
+  )
 
   const handleExport = useCallback(async () => {
     const container = cardRef.current
@@ -186,17 +197,43 @@ export default function ChartCard({ chart, animationDelay = 0 }: ChartCardProps)
         scale: 2,
         logging: false,
         useCORS: true,
+        allowTaint: true,
+        foreignObjectRendering: false,
       })
+      const url = canvas.toDataURL('image/png')
       const link = document.createElement('a')
       link.download = `${chart.title.replace(/\s+/g, '-').toLowerCase()}.png`
-      link.href = canvas.toDataURL('image/png')
+      link.href = url
+      document.body.appendChild(link)
       link.click()
-    } catch {
-      // silently ignore
+      document.body.removeChild(link)
+      toast({ title: 'Chart exported!', description: `${chart.title}.png saved.` })
+    } catch (err) {
+      toast({ title: 'Export failed', description: String(err), variant: 'destructive' })
     } finally {
       setExporting(false)
     }
   }, [chart.title])
+
+  const handleExplain = useCallback(async () => {
+    setShowExplain(true)
+    if (explanation) return
+    setExplaining(true)
+    try {
+      const text = await explainChart(
+        chart.title,
+        chart.chart_type,
+        chart.description,
+        chart.data.slice(0, 20) as Record<string, unknown>[],
+        originalQuery,
+      )
+      setExplanation(text)
+    } catch {
+      setExplanation('Unable to generate explanation at this time.')
+    } finally {
+      setExplaining(false)
+    }
+  }, [chart, originalQuery, explanation])
 
   const renderChart = () => {
     switch (chart.chart_type) {
@@ -211,9 +248,17 @@ export default function ChartCard({ chart, animationDelay = 0 }: ChartCardProps)
   return (
     <div
       ref={cardRef}
-      className="bg-[#131920] border border-[#1C2730] rounded-2xl p-5 hover:border-[#2DD4BF]/30 transition-all duration-300"
+      className={`bg-[#131920] border rounded-2xl p-5 transition-all duration-300 ${isFeatured ? 'border-[#2DD4BF]/50 shadow-[0_0_20px_rgba(45,212,191,0.08)]' : 'border-[#1C2730] hover:border-[#2DD4BF]/30'}`}
       style={{ animation: `fadeInUp 0.5s ease-out ${animationDelay}ms both` }}
     >
+      {/* Featured label */}
+      {isFeatured && (
+        <div className="flex items-center gap-1.5 mb-3">
+          <Star className="w-3 h-3 text-[#2DD4BF] fill-[#2DD4BF]" />
+          <span className="text-[10px] font-mono font-semibold text-[#2DD4BF] uppercase tracking-widest">Best Match</span>
+        </div>
+      )}
+
       {/* Card header */}
       <div className="flex items-start justify-between mb-1 gap-3">
         <div className="flex-1 min-w-0">
@@ -227,6 +272,14 @@ export default function ChartCard({ chart, animationDelay = 0 }: ChartCardProps)
             <Icon className="w-3 h-3" />
             {typeInfo.label}
           </Badge>
+          <button
+            onClick={handleExplain}
+            title="Explain this chart"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[#4F6478] hover:text-[#2DD4BF] hover:bg-[#0F3D38] transition-colors text-xs font-mono"
+          >
+            <Sparkles className="w-3 h-3" />
+            Explain
+          </button>
           <button
             onClick={handleExport}
             disabled={exporting}
@@ -242,6 +295,41 @@ export default function ChartCard({ chart, animationDelay = 0 }: ChartCardProps)
       <div className="mt-3">
         {renderChart()}
       </div>
+
+      {/* Anomaly callouts */}
+      {chartAnomalies.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          {chartAnomalies.map((a, i) => (
+            <div key={i} className={`flex items-start gap-2 px-3 py-2 rounded-lg text-xs font-mono ${a.severity === 'critical' ? 'bg-[#ef4444]/10 border border-[#ef4444]/20 text-[#ef4444]' : 'bg-[#f59e0b]/10 border border-[#f59e0b]/20 text-[#f59e0b]'}`}>
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+              <span>{a.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Explain panel */}
+      {showExplain && (
+        <div className="mt-4 rounded-xl bg-[#0D1117] border border-[#2DD4BF]/20 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#2DD4BF]" />
+              <span className="text-xs font-mono font-semibold text-[#2DD4BF] uppercase tracking-widest">Chart Explanation</span>
+            </div>
+            <button onClick={() => setShowExplain(false)} className="text-[#4F6478] hover:text-[#94a3b8] transition-colors">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {explaining ? (
+            <div className="flex items-center gap-2 py-2">
+              <div className="w-3 h-3 rounded-full bg-[#2DD4BF] animate-pulse" />
+              <span className="text-xs text-[#4F6478] font-mono">Analyzing chart data...</span>
+            </div>
+          ) : (
+            <p className="text-xs text-[#94a3b8] leading-relaxed font-mono">{explanation}</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

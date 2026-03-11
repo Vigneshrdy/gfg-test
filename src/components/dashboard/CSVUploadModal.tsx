@@ -202,7 +202,7 @@ export default function CSVUploadModal({ open, onClose, onSuccess }: CSVUploadMo
               <button onClick={reset} className="text-xs text-[#4a4a6a] hover:text-[#94a3b8] transition-colors">
                 Upload a different file
               </button>
-              <Button onClick={handleUpload} className="gap-2">
+              <Button onClick={handleUpload} className="gap-2 bg-[#2DD4BF] text-[#080B0E] hover:bg-[#2DD4BF]/90 font-semibold">
                 Start Querying This Data
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -233,7 +233,7 @@ export default function CSVUploadModal({ open, onClose, onSuccess }: CSVUploadMo
               <p className="text-[#e2e8f0] font-medium mb-1">Data ready!</p>
               <p className="text-xs text-[#4a4a6a]">Your CSV has been indexed. Start asking questions!</p>
             </div>
-            <Button onClick={handleClose} className="mx-auto">Start Querying</Button>
+            <Button onClick={handleClose} className="mx-auto bg-[#2DD4BF] text-[#080B0E] hover:bg-[#2DD4BF]/90 font-semibold">Start Querying</Button>
           </div>
         )}
       </DialogContent>

@@ -106,3 +106,25 @@ export async function getMeApi(): Promise<{ id: number; email: string; full_name
   const res = await fetch(`${API_BASE}/api/auth/me`, { headers: getAuthHeaders() })
   return handleResponse(res)
 }
+
+export async function explainChart(
+  chartTitle: string,
+  chartType: string,
+  chartDescription: string,
+  dataSample: Record<string, unknown>[],
+  originalQuery: string,
+): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/explain-chart`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      chart_title: chartTitle,
+      chart_type: chartType,
+      chart_description: chartDescription,
+      data_sample: dataSample,
+      original_query: originalQuery,
+    }),
+  })
+  const data = await handleResponse<{ explanation: string }>(res)
+  return data.explanation
+}

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from auth import get_current_user
-from llm_pipeline import run_query_pipeline
-from models import QueryRequest, QueryResponse
+from llm_pipeline import run_query_pipeline, explain_chart
+from models import QueryRequest, QueryResponse, ExplainChartRequest
 
 router = APIRouter(tags=["query"])
 
@@ -10,18 +10,28 @@ router = APIRouter(tags=["query"])
 @router.post("/query", response_model=QueryResponse)
 async def query_endpoint(
     body: QueryRequest,
-    _user: dict = Depends(get_current_user),
+    user: dict = Depends(get_current_user),
 ) -> QueryResponse:
-    """
-    Main BI query endpoint.
-
-    Accepts a natural-language business question, runs the multi-step LLM
-    pipeline (SQL generation → execution → chart selection → insights) and
-    returns a fully structured dashboard payload ready for the React frontend.
-    """
+    plan = "pro" if user.get("role") in ("admin", "pro") else "free"
     result = await run_query_pipeline(
         query=body.query,
         conversation_history=[m.model_dump() for m in body.conversation_history],
         uploaded_schema=body.uploaded_schema,
+        plan=plan,
     )
     return result
+
+
+@router.post("/explain-chart")
+async def explain_chart_endpoint(
+    body: ExplainChartRequest,
+    _user: dict = Depends(get_current_user),
+) -> dict:
+    explanation = await explain_chart(
+        chart_title=body.chart_title,
+        chart_type=body.chart_type,
+        chart_description=body.chart_description,
+        data_sample=body.data_sample,
+        original_query=body.original_query,
+    )
+    return {"explanation": explanation}

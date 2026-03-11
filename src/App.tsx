@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import DashboardPage from './pages/DashboardPage'
 import HistoryPage from './pages/HistoryPage'
+import SettingsPage from './pages/SettingsPage'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 
 const queryClient = new QueryClient({
@@ -40,6 +41,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <HistoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
                 </ProtectedRoute>
               }
             />

@@ -36,8 +36,24 @@ const EXAMPLE_QUERIES = [
   'Year-over-year sales growth by category',
 ]
 
+function generateQueriesFromSchema(schema: Array<{ name: string; type: string }>): string[] {
+  const numCols = schema.filter(c => c.type === 'number').map(c => c.name)
+  const txtCols = schema.filter(c => c.type === 'text').map(c => c.name)
+  const datCols = schema.filter(c => c.type === 'date').map(c => c.name)
+  const queries: string[] = []
+  if (numCols[0] && txtCols[0]) queries.push(`Total ${numCols[0]} by ${txtCols[0]}`)
+  if (numCols[0] && txtCols[1]) queries.push(`Compare ${numCols[0]} across different ${txtCols[1]}`)
+  else if (numCols[1] && txtCols[0]) queries.push(`Average ${numCols[1]} per ${txtCols[0]}`)
+  if (numCols[0]) queries.push(`Top 10 rows by highest ${numCols[0]}`)
+  if (datCols[0] && numCols[0]) queries.push(`How does ${numCols[0]} change over ${datCols[0]}?`)
+  if (txtCols[0]) queries.push(`Distribution of ${txtCols[0]}`)
+  if (numCols[0] && numCols[1]) queries.push(`Correlation between ${numCols[0]} and ${numCols[1]}`)
+  else queries.push(`Summary statistics for all numeric columns`)
+  return queries.slice(0, 6)
+}
+
 // === Empty State ===
-function EmptyState({ onQuerySelect }: { onQuerySelect: (q: string) => void }) {
+function EmptyState({ onQuerySelect, queries }: { onQuerySelect: (q: string) => void; queries: string[] }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <div className="mb-6 text-center">
@@ -51,7 +67,7 @@ function EmptyState({ onQuerySelect }: { onQuerySelect: (q: string) => void }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
-        {EXAMPLE_QUERIES.map(q => (
+        {queries.map(q => (
           <button
             key={q}
             onClick={() => onQuerySelect(q)}
@@ -126,6 +142,17 @@ function DashboardResult({
           <div className="flex items-center gap-2">
             <span className="text-xs text-[#4a4a6a] font-mono">{timeAgo(session.timestamp)}</span>
             {res && <Badge variant="success" className="text-xs">Generated in {res.generated_in}s</Badge>}
+            {res?.confidence_score != null && (
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                res.confidence_score >= 80
+                  ? 'text-[#10b981] border-[#10b981]/30 bg-[#10b981]/10'
+                  : res.confidence_score >= 50
+                  ? 'text-[#f59e0b] border-[#f59e0b]/30 bg-[#f59e0b]/10'
+                  : 'text-[#ef4444] border-[#ef4444]/30 bg-[#ef4444]/10'
+              }`}>
+                {res.confidence_score}% — {res.confidence_label}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -139,7 +166,14 @@ function DashboardResult({
           {res.charts && res.charts.length > 0 && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {res.charts.map((chart, i) => (
-                <ChartCard key={chart.chart_id} chart={chart} animationDelay={i * 150} />
+                <ChartCard
+                  key={chart.chart_id}
+                  chart={chart}
+                  animationDelay={i * 150}
+                  isFeatured={chart.chart_id === res.featured_chart_id || i === 0}
+                  anomalies={res.anomalies}
+                  originalQuery={session.query}
+                />
               ))}
             </div>
           )}
@@ -176,10 +210,22 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState<QuerySession[]>([])
   const [csvSource, setCsvSource] = useState<string | null>(null)
   const [uploadedSchema, setUploadedSchema] = useState<string | null>(null)
+  const [csvColumns, setCsvColumns] = useState<Array<{ name: string; type: string }>>([])
   const [errorState, setErrorState] = useState<{ message: string; suggestions?: string[] } | null>(null)
   const [notifications, setNotifications] = useState<{ id: string; type: 'success' | 'error'; title: string; body: string; seen: boolean }[]>([])
   const [notifOpen, setNotifOpen] = useState(false)
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const lastQueryRef = useRef('')
+  const sessionRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null)
+
+  const scrollToSession = useCallback((id: string) => {
+    setActiveSessionId(id)
+    setTimeout(() => {
+      sessionRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+    setTimeout(() => setActiveSessionId(null), 1800)
+  }, [])
 
   const addNotif = useCallback((type: 'success' | 'error', title: string, body: string) => {
     setNotifications(prev => [{ id: `n-${Date.now()}`, type, title, body, seen: false }, ...prev].slice(0, 20))
@@ -198,20 +244,22 @@ export default function DashboardPage() {
 
   useEffect(() => { document.title = 'QueryMind — Dashboard' }, [])
 
-  // Load sessions from localStorage
+  const sessionKey = `querymind_sessions_${user?.id || user?.email || 'guest'}`
+
+  // Load sessions from localStorage (keyed per user)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('querymind_sessions')
+      const saved = localStorage.getItem(sessionKey)
       if (saved) setSessions(JSON.parse(saved))
     } catch { /* ignore */ }
-  }, [])
+  }, [sessionKey])
 
   const saveSessions = useCallback((s: QuerySession[]) => {
     setSessions(s)
     try {
-      localStorage.setItem('querymind_sessions', JSON.stringify(s.slice(0, 20)))
+      localStorage.setItem(sessionKey, JSON.stringify(s.slice(0, 20)))
     } catch { /* ignore */ }
-  }, [])
+  }, [sessionKey])
 
   const handleSubmit = useCallback(async () => {
     if (!query.trim() || loading) return
@@ -260,6 +308,7 @@ export default function DashboardPage() {
 
   const userName = user?.full_name || user?.email?.split('@')[0] || 'User'
   const userInitials = userName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+  const isPro = user?.role === 'admin' || user?.role === 'pro'
 
   return (
     <div className="h-screen flex flex-col bg-[#08080f] overflow-hidden">
@@ -285,6 +334,15 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {isPro ? (
+            <span className="hidden sm:flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#2DD4BF]/15 border border-[#2DD4BF]/30 text-[#2DD4BF] uppercase tracking-widest">
+              ✦ Pro
+            </span>
+          ) : (
+            <span className="hidden sm:flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1C2730] border border-[#1C2730] text-[#4F6478] uppercase tracking-widest">
+              Free · 1 chart
+            </span>
+          )}
           {csvSource ? (
             <div className="flex items-center gap-1.5 text-xs">
               <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
@@ -363,7 +421,7 @@ export default function DashboardPage() {
               <DropdownMenuLabel>{userName}</DropdownMenuLabel>
               <DropdownMenuLabel className="text-xs font-normal -mt-1 opacity-60">{user?.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2"><Settings className="w-4 h-4" /> Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/dashboard/settings')} className="gap-2"><Settings className="w-4 h-4" /> Settings</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/dashboard/history')} className="gap-2"><History className="w-4 h-4" /> Query History</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="gap-2 text-[#ef4444] focus:text-[#ef4444]">
@@ -394,7 +452,8 @@ export default function DashboardPage() {
                 <div className="space-y-1">
                   {sessions.slice(0, 15).map(s => (
                     <div key={s.id}
-                      className="group flex items-center gap-2 p-2.5 rounded-lg hover:bg-[#131920] transition-colors cursor-pointer">
+                      onClick={() => scrollToSession(s.id)}
+                      className={`group flex items-center gap-2 p-2.5 rounded-lg hover:bg-[#131920] transition-colors cursor-pointer ${activeSessionId === s.id ? 'bg-[#0F3D38] border border-[#2DD4BF]/20' : ''}`}>
                       <BarChart2 className="w-3.5 h-3.5 text-[#4a4a6a] flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-[#94a3b8] truncate">{truncate(s.query, 38)}</p>
@@ -498,7 +557,8 @@ export default function DashboardPage() {
               {!loading && !errorState && sessions.length > 0 && (
                 <div className="space-y-8">
                   {sessions.map((session, i) => (
-                    <div key={session.id}>
+                    <div key={session.id} ref={el => { sessionRefs.current[session.id] = el }}
+                      className={`transition-all duration-500 rounded-xl ${activeSessionId === session.id ? 'ring-1 ring-[#2DD4BF]/40 bg-[#0F3D38]/10 p-3 -mx-3' : ''}`}>
                       <DashboardResult
                         session={session}
                         isLatest={i === 0}
@@ -512,7 +572,7 @@ export default function DashboardPage() {
 
               {/* Empty state */}
               {!loading && !errorState && sessions.length === 0 && (
-                <EmptyState onQuerySelect={q => { setQuery(q); setTimeout(handleSubmit, 100) }} />
+                <EmptyState onQuerySelect={q => { setQuery(q); setTimeout(handleSubmit, 100) }} queries={csvColumns.length > 0 ? generateQueriesFromSchema(csvColumns) : EXAMPLE_QUERIES} />
               )}
             </div>
           </ScrollArea>
@@ -522,9 +582,10 @@ export default function DashboardPage() {
       <CSVUploadModal
         open={csvModalOpen}
         onClose={() => setCsvModalOpen(false)}
-        onSuccess={(name, _schema, tableName, schemaDescription) => {
+        onSuccess={(name, schema, tableName, schemaDescription) => {
           setCsvSource(`📄 ${name}`)
           setUploadedSchema(schemaDescription || null)
+          setCsvColumns(schema)
           // Clear old sessions so dashboard starts fresh for the new data source
           saveSessions([])
           setErrorState(null)

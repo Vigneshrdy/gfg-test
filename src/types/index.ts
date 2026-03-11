@@ -20,6 +20,13 @@ export interface Chart {
   config: ChartConfig
 }
 
+export interface Anomaly {
+  point_label: string
+  metric: string
+  message: string
+  severity: 'warning' | 'critical'
+}
+
 export interface DashboardResponse {
   success: boolean
   sql_generated?: string
@@ -31,6 +38,10 @@ export interface DashboardResponse {
   error?: string
   error_reason?: string
   suggestions?: string[]
+  confidence_score?: number
+  confidence_label?: string
+  anomalies?: Anomaly[]
+  featured_chart_id?: string
 }
 
 export interface UploadResponse {

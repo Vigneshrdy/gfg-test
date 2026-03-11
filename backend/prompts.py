@@ -143,6 +143,20 @@ Generate sharp, actionable insights AND natural follow-up questions.
 - Short (under 12 words each)
 - Progressively deeper — go from overview → drill-down → actionable
 
+## RULES FOR CONFIDENCE SCORE:
+- Rate your confidence 0–100 based on: data completeness, query clarity, row count, column coverage
+- 80-100 = High confidence (sufficient data, clear mapping)
+- 50-79 = Medium confidence (partial data or ambiguous query)
+- 0-49 = Low confidence (minimal data, guessed columns, or sparse results)
+- Also provide a 3-5 word confidence_label like "High confidence", "Limited data — moderate confidence"
+
+## RULES FOR ANOMALIES:
+- Scan the data for genuine statistical outliers or unusual patterns
+- An anomaly is a point that deviates significantly (>30%) from surrounding values OR an unexpected pattern
+- Return UP TO 3 anomalies maximum — only if genuinely notable. Return [] if nothing stands out
+- Keep messages concise: "⚠ August fell 34%", "⚠ Outlier: 3x typical value"
+- severity: "warning" for moderate, "critical" for extreme
+
 ## RESPONSE FORMAT — STRICT JSON, NO MARKDOWN:
 {{
   "insights": [
@@ -154,6 +168,11 @@ Generate sharp, actionable insights AND natural follow-up questions.
     "Short follow-up question 1",
     "Short follow-up question 2",
     "Short follow-up question 3"
+  ],
+  "confidence_score": 87,
+  "confidence_label": "High confidence",
+  "anomalies": [
+    {{"point_label": "August 2024", "metric": "total_revenue", "message": "\u26a0 August dropped 34% — unusual for this period", "severity": "warning"}}
   ]
 }}
 """.strip()
@@ -173,4 +192,35 @@ Sample data (first 3 rows):
 
 Write a concise 2–3 sentence description of what this dataset contains and what business questions it could answer.
 Return ONLY the description text, no JSON, no headers.
+""".strip()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Chart Explanation
+# ──────────────────────────────────────────────────────────────────────────────
+EXPLAIN_CHART_PROMPT = """
+You are a senior data analyst explaining a business chart to a non-technical executive.
+
+## ORIGINAL BUSINESS QUESTION:
+{original_query}
+
+## CHART DETAILS:
+- Title: {chart_title}
+- Chart type: {chart_type}
+- Description: {chart_description}
+
+## DATA (first 20 rows):
+{data_sample}
+
+## YOUR TASK:
+Write a clear, insightful explanation of this chart as if you're a data analyst sitting next to the user.
+Cover:
+1. What the chart shows overall (1 sentence)
+2. The most important trend, peak, or pattern visible in the data (1-2 sentences, with specific numbers)
+3. What this means for the business (1 sentence)
+4. One actionable recommendation based on this chart (1 sentence)
+
+Keep it conversational, specific, and under 120 words total.
+Do NOT use bullet points — write flowing paragraphs.
+Return ONLY the explanation text, nothing else.
 """.strip()

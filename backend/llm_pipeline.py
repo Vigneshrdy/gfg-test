@@ -22,6 +22,7 @@ from config import settings
 from database import execute_llm_sql
 from models import QueryResponse
 from prompts import (
+    EXPLAIN_CHART_PROMPT,
     INSIGHT_AND_FOLLOWUP_PROMPT,
     SCHEMA_AWARE_SQL_RETRY_PROMPT,
     SCHEMA_AWARE_SQL_SYSTEM_PROMPT,
@@ -141,25 +142,44 @@ async def _generate_insights(
     original_query: str,
     sql: str,
     rows: list[dict],
-) -> tuple[list[str], list[str]]:
+) -> tuple[list[str], list[str], int, str, list[dict]]:
     sample = rows[:50]
-    # Compute simple stats
     col_names = list(rows[0].keys()) if rows else []
-    stats = {"row_count": len(rows), "columns": col_names}
 
     prompt = INSIGHT_AND_FOLLOWUP_PROMPT.format(
         original_query=original_query,
         sql=sql,
         data_sample=json.dumps(sample, default=str),
         row_count=len(rows),
-        columns=", ".join(col_names),
+        columns=', '.join(col_names),
     )
-    messages = [{"role": "user", "content": prompt}]
+    messages = [{'role': 'user', 'content': prompt}]
     result = await _chat_json(messages, temperature=0.4)
 
-    insights = result.get("insights", [])
-    follow_ups = result.get("follow_up_suggestions", [])
-    return insights[:5], follow_ups[:3]
+    insights = result.get('insights', [])[:5]
+    follow_ups = result.get('follow_up_suggestions', [])[:3]
+    confidence_score = int(result.get('confidence_score') or 75)
+    confidence_label = str(result.get('confidence_label') or 'Moderate confidence')
+    anomalies = result.get('anomalies') or []
+    return insights, follow_ups, confidence_score, confidence_label, anomalies
+
+
+# Chart explanation
+async def explain_chart(
+    chart_title: str,
+    chart_type: str,
+    chart_description: str,
+    data_sample: list[dict],
+    original_query: str,
+) -> str:
+    prompt = EXPLAIN_CHART_PROMPT.format(
+        original_query=original_query,
+        chart_title=chart_title,
+        chart_type=chart_type,
+        chart_description=chart_description,
+        data_sample=json.dumps(data_sample[:20], default=str),
+    )
+    return await _chat_text([{'role': 'user', 'content': prompt}], temperature=0.4)
 
 
 # ── Public entry point ────────────────────────────────────────────────────────
@@ -167,6 +187,7 @@ async def run_query_pipeline(
     query: str,
     conversation_history: list[dict],
     uploaded_schema: str | None,
+    plan: str = "free",
 ) -> QueryResponse:
     t0 = time.time()
     conversation_id = str(uuid.uuid4())
@@ -252,14 +273,19 @@ async def run_query_pipeline(
         )
 
     # ── Step 3: Build charts ──────────────────────────────────────────────────
+    # ── Step 3: Build charts ──────────────────────────────────────────────────
     charts_raw = build_charts(rows, chart_recs)
-
+    # Limit charts by plan: pro = 3, free = 1
+    max_charts = 3 if plan == "pro" else 1
+    charts_raw = charts_raw[:max_charts]
     # ── Step 4: Generate insights + follow-ups ────────────────────────────────
     try:
-        insights, follow_ups = await _generate_insights(query, sql, rows)
+        insights, follow_ups, confidence_score, confidence_label, anomalies = await _generate_insights(query, sql, rows)
     except Exception as exc:
-        logger.warning("Insight generation failed (non-fatal): %s", exc)
-        insights, follow_ups = [], []
+        logger.warning("Insight generation failed: %s", exc)
+        insights, follow_ups, confidence_score, confidence_label, anomalies = [], [], 70, "Moderate confidence", []
+
+    featured_chart_id = charts_raw[0]["chart_id"] if charts_raw else None
 
     return QueryResponse(
         success=True,
@@ -279,4 +305,8 @@ async def run_query_pipeline(
         insights=insights,
         follow_up_suggestions=follow_ups,
         generated_in=_elapsed(),
+        confidence_score=confidence_score,
+        confidence_label=confidence_label,
+        anomalies=anomalies,
+        featured_chart_id=featured_chart_id,
     )

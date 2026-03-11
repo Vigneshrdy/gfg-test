@@ -37,6 +37,7 @@ class QueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000)
     conversation_history: list[ConversationMessage] = []
     uploaded_schema: Optional[str] = None  # injected when CSV was uploaded
+    plan: str = "free"  # "free" | "pro"
 
 
 class ChartConfig(BaseModel):
@@ -55,6 +56,13 @@ class Chart(BaseModel):
     config: ChartConfig
 
 
+class Anomaly(BaseModel):
+    point_label: str
+    metric: str
+    message: str
+    severity: str = "warning"  # "warning" | "critical"
+
+
 class QueryResponse(BaseModel):
     success: bool
     conversation_id: str
@@ -66,6 +74,18 @@ class QueryResponse(BaseModel):
     error: Optional[str] = None
     error_reason: Optional[str] = None
     suggestions: Optional[list[str]] = None
+    confidence_score: Optional[int] = None
+    confidence_label: Optional[str] = None
+    anomalies: list[Anomaly] = []
+    featured_chart_id: Optional[str] = None
+
+
+class ExplainChartRequest(BaseModel):
+    chart_title: str
+    chart_type: str
+    chart_description: str
+    data_sample: list[dict]
+    original_query: str
 
 
 # ── CSV upload models ──────────────────────────────────────────
