@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Menu, X, Sparkles, Database, Bell, Settings, LogOut, History,
   Upload, Plus, Trash2, ChevronDown, BarChart2, FileText, AlertCircle, Clock,
-  CheckCircle2, XCircle
+  CheckCircle2, XCircle, Share2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,21 +20,15 @@ import ChartCard from '@/components/dashboard/ChartCard'
 import InsightsPanel from '@/components/dashboard/InsightsPanel'
 import SQLBlock from '@/components/dashboard/SQLBlock'
 import CSVUploadModal from '@/components/dashboard/CSVUploadModal'
+import ExecutiveSummary from '@/components/dashboard/ExecutiveSummary'
+import CommandPalette from '@/components/dashboard/CommandPalette'
 import { useAuth } from '@/contexts/AuthContext'
-import { queryDashboard } from '@/lib/api'
+import { queryDashboard, shareDashboard } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
+
 import { playSuccess, playError, playNotification } from '@/lib/sounds'
 import type { DashboardResponse, QuerySession } from '@/types'
 import { truncate, timeAgo } from '@/lib/utils'
-
-const EXAMPLE_QUERIES = [
-  'Monthly revenue by region for Q3 2024',
-  'Top 10 products by profit margin',
-  'Marketing channel ROI comparison',
-  'Customer segment breakdown by acquisition channel',
-  'Inventory items below reorder point',
-  'Year-over-year sales growth by category',
-]
 
 function generateQueriesFromSchema(schema: Array<{ name: string; type: string }>): string[] {
   const numCols = schema.filter(c => c.type === 'number').map(c => c.name)
@@ -52,33 +46,98 @@ function generateQueriesFromSchema(schema: Array<{ name: string; type: string }>
   return queries.slice(0, 6)
 }
 
-// === Empty State ===
-function EmptyState({ onQuerySelect, queries }: { onQuerySelect: (q: string) => void; queries: string[] }) {
+// === CSV Upload Prompt (shown when no CSV is loaded) ===
+function CSVUploadPrompt({ onUpload }: { onUpload: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      <div className="mb-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-[#0F3D38] border border-[#2DD4BF]/20 flex items-center justify-center mx-auto mb-4 animate-float">
-          <Sparkles className="w-8 h-8 text-[#2DD4BF]" />
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      <div
+        onClick={onUpload}
+        className="group cursor-pointer flex flex-col items-center gap-5 border-2 border-dashed border-[#253040] hover:border-[#2DD4BF]/60 rounded-2xl p-12 max-w-lg w-full transition-all hover:bg-[#0F3D38]/10"
+      >
+        <div className="w-20 h-20 rounded-2xl bg-[#0F3D38] border border-[#2DD4BF]/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <Upload className="w-9 h-9 text-[#2DD4BF]" />
         </div>
-        <h2 className="font-mono font-bold text-3xl text-[#E8EDF2] mb-3">What would you like to explore?</h2>
-        <p className="text-[#94a3b8] max-w-md mx-auto text-sm leading-relaxed">
-          Ask any business question in plain English and get an instant interactive dashboard.
-        </p>
+        <div className="text-center">
+          <h2 className="font-mono font-bold text-2xl text-[#E8EDF2] mb-2">Upload your CSV to get started</h2>
+          <p className="text-[#4F6478] text-sm leading-relaxed">
+            Drop any CSV file and instantly get AI-powered charts,
+            insights, and smart questions about your data.
+          </p>
+        </div>
+        <span className="px-5 py-2 rounded-full bg-[#2DD4BF] text-[#080B0E] text-sm font-mono font-semibold">
+          Choose a CSV file
+        </span>
+      </div>
+      <p className="mt-4 text-xs text-[#2D3D4D] font-mono">Supports any CSV — sales, inventory, finance, logistics…</p>
+    </div>
+  )
+}
+
+// === CSV Overview (shown right after upload, before any query) ===
+function CSVOverview({
+  csvName, columns, rowCount, suggestedQueries, onQuerySelect
+}: {
+  csvName: string
+  columns: Array<{ name: string; type: string }>
+  rowCount?: number
+  suggestedQueries: string[]
+  onQuerySelect: (q: string) => void
+}) {
+  const numCols = columns.filter(c => c.type === 'number')
+  const txtCols = columns.filter(c => c.type === 'text')
+  const datCols = columns.filter(c => c.type === 'date')
+  return (
+    <div className="px-4 py-6 space-y-6 max-w-4xl">
+      {/* File header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-[#0F3D38] border border-[#2DD4BF]/20 flex items-center justify-center flex-shrink-0">
+          <FileText className="w-5 h-5 text-[#2DD4BF]" />
+        </div>
+        <div>
+          <h2 className="font-mono font-semibold text-[#E8EDF2] text-base">{csvName}</h2>
+          <p className="text-xs text-[#4F6478] font-mono">
+            {columns.length} columns
+            {rowCount ? ` · ${rowCount.toLocaleString()} rows` : ''}
+            {numCols.length > 0 ? ` · ${numCols.length} numeric` : ''}
+            {datCols.length > 0 ? ` · ${datCols.length} date` : ''}
+          </p>
+        </div>
+        <span className="ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#10b981]/10 border border-[#10b981]/30 text-[#10b981]">Ready</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
-        {queries.map(q => (
-          <button
-            key={q}
-            onClick={() => onQuerySelect(q)}
-            className="glass-card glass-card-hover rounded-xl p-4 text-left cursor-pointer border border-[#1C2730] hover:border-[#2DD4BF]/40 group transition-all"
-          >
-            <div className="flex items-start gap-2">
-              <BarChart2 className="w-4 h-4 text-[#2DD4BF] flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-              <span className="text-sm text-[#8FA3B8] group-hover:text-[#E8EDF2] transition-colors leading-snug">{q}</span>
-            </div>
-          </button>
-        ))}
+      {/* Column chips */}
+      <div>
+        <p className="text-xs text-[#4a4a6a] font-mono uppercase tracking-widest mb-2">Columns detected</p>
+        <div className="flex flex-wrap gap-1.5">
+          {columns.map(c => (
+            <span key={c.name} className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${
+              c.type === 'number' ? 'bg-[#60A5FA]/10 border-[#60A5FA]/25 text-[#60A5FA]'
+              : c.type === 'date' ? 'bg-[#FBBF24]/10 border-[#FBBF24]/25 text-[#FBBF24]'
+              : 'bg-[#253040] border-[#344558] text-[#8FA3B8]'
+            }`}>
+              {c.name}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Suggested questions */}
+      <div>
+        <p className="text-xs text-[#4a4a6a] font-mono uppercase tracking-widest mb-3">Try asking…</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {suggestedQueries.map(q => (
+            <button
+              key={q}
+              onClick={() => onQuerySelect(q)}
+              className="glass-card glass-card-hover rounded-xl p-3.5 text-left cursor-pointer border border-[#1C2730] hover:border-[#2DD4BF]/40 group transition-all"
+            >
+              <div className="flex items-start gap-2">
+                <BarChart2 className="w-3.5 h-3.5 text-[#2DD4BF] flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                <span className="text-sm text-[#8FA3B8] group-hover:text-[#E8EDF2] transition-colors leading-snug">{q}</span>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -113,9 +172,10 @@ function ErrorState({ error, suggestions, onRetry, onSuggestion }: {
 
 // === Dashboard Result Block ===
 function DashboardResult({
-  session, isLatest, onFollowUp
+  session, isLatest, onFollowUp, onShare
 }: {
   session: QuerySession; isLatest: boolean; onFollowUp: (s: string) => void
+  onShare?: () => void
 }) {
   const [expanded, setExpanded] = useState(isLatest)
   const res = session.response
@@ -136,6 +196,12 @@ function DashboardResult({
                 className="text-xs text-[#4a4a6a] hover:text-[#94a3b8] transition-colors flex items-center gap-1 flex-shrink-0">
                 {expanded ? 'Collapse' : 'Expand'}
                 <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              </button>
+            )}
+            {onShare && (
+              <button onClick={onShare}
+                className="text-xs flex items-center gap-1 text-[#4a4a6a] hover:text-[#2DD4BF] transition-colors flex-shrink-0">
+                <Share2 className="w-3 h-3" /> Share
               </button>
             )}
           </div>
@@ -180,6 +246,14 @@ function DashboardResult({
 
           {res.insights && res.insights.length > 0 && <InsightsPanel insights={res.insights} />}
 
+          {res.insights && res.insights.length > 0 && (
+            <ExecutiveSummary
+              query={session.query}
+              insights={res.insights}
+              chartsData={res.charts as unknown as Record<string, unknown>[]}
+            />
+          )}
+
           {res.follow_up_suggestions && res.follow_up_suggestions.length > 0 && (
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs text-[#4a4a6a] font-mono">Continue exploring →</span>
@@ -215,6 +289,7 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState<{ id: string; type: 'success' | 'error'; title: string; body: string; seen: boolean }[]>([])
   const [notifOpen, setNotifOpen] = useState(false)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+  const [csvRowCount, setCsvRowCount] = useState<number | undefined>(undefined)
   const lastQueryRef = useRef('')
   const sessionRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const scrollAreaRef = useRef<HTMLDivElement | null>(null)
@@ -343,15 +418,10 @@ export default function DashboardPage() {
               Free · 1 chart
             </span>
           )}
-          {csvSource ? (
+          {csvSource && (
             <div className="flex items-center gap-1.5 text-xs">
               <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
-              <span className="text-[#10b981] font-mono hidden sm:block truncate max-w-[120px]">{csvSource}</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
-              <span className="text-[#10b981] font-mono hidden sm:block">NexaMart DB</span>
+              <span className="text-[#10b981] font-mono hidden sm:block truncate max-w-[140px]">{csvSource}</span>
             </div>
           )}
 
@@ -516,6 +586,7 @@ export default function DashboardPage() {
               onChange={setQuery}
               onSubmit={handleSubmit}
               disabled={loading}
+              placeholder={csvSource ? 'Ask about your uploaded data...' : 'Upload a CSV to get started...'}
               suggestions={sessions.length > 0 && sessions[0].response?.follow_up_suggestions
                 ? sessions[0].response.follow_up_suggestions.slice(0, 3)
                 : ['Show me Q3 revenue by region', 'Marketing ROI by channel', 'Product category breakdown']}
@@ -563,6 +634,24 @@ export default function DashboardPage() {
                         session={session}
                         isLatest={i === 0}
                         onFollowUp={s => setQuery(s)}
+                        onShare={async () => {
+                          if (!session.response) return
+                          try {
+                            const r = await shareDashboard({
+                              query: session.query,
+                              charts_data: session.response.charts as unknown as Record<string, unknown>[],
+                              insights: session.response.insights,
+                              follow_up_suggestions: session.response.follow_up_suggestions,
+                              confidence_score: session.response.confidence_score,
+                              confidence_label: session.response.confidence_label,
+                            })
+                            const url = `${window.location.origin}/d/${r.share_id}`
+                            await navigator.clipboard.writeText(url)
+                            toast({ title: 'Link copied!', description: 'Anyone with this link can view this dashboard.' })
+                          } catch {
+                            toast({ title: 'Share failed', variant: 'destructive' })
+                          }
+                        }}
                       />
                       {i < sessions.length - 1 && <Separator className="mt-8" />}
                     </div>
@@ -572,7 +661,17 @@ export default function DashboardPage() {
 
               {/* Empty state */}
               {!loading && !errorState && sessions.length === 0 && (
-                <EmptyState onQuerySelect={q => { setQuery(q); setTimeout(handleSubmit, 100) }} queries={csvColumns.length > 0 ? generateQueriesFromSchema(csvColumns) : EXAMPLE_QUERIES} />
+                csvSource && csvColumns.length > 0 ? (
+                  <CSVOverview
+                    csvName={csvSource.replace('📄 ', '')}
+                    columns={csvColumns}
+                    rowCount={csvRowCount}
+                    suggestedQueries={generateQueriesFromSchema(csvColumns)}
+                    onQuerySelect={q => { setQuery(q); setTimeout(handleSubmit, 100) }}
+                  />
+                ) : (
+                  <CSVUploadPrompt onUpload={() => setCsvModalOpen(true)} />
+                )
               )}
             </div>
           </ScrollArea>
@@ -582,10 +681,11 @@ export default function DashboardPage() {
       <CSVUploadModal
         open={csvModalOpen}
         onClose={() => setCsvModalOpen(false)}
-        onSuccess={(name, schema, tableName, schemaDescription) => {
+        onSuccess={(name, schema, tableName, schemaDescription, rowCount) => {
           setCsvSource(`📄 ${name}`)
           setUploadedSchema(schemaDescription || null)
           setCsvColumns(schema)
+          if (rowCount != null) setCsvRowCount(rowCount)
           // Clear old sessions so dashboard starts fresh for the new data source
           saveSessions([])
           setErrorState(null)
@@ -594,6 +694,36 @@ export default function DashboardPage() {
           playNotification()
           setCsvModalOpen(false)
         }}
+      />
+
+      <CommandPalette
+        onNewDashboard={() => { saveSessions([]); setQuery(''); setErrorState(null) }}
+        onUploadCSV={() => setCsvModalOpen(true)}
+        onNavigateHistory={() => navigate('/dashboard/history')}
+        onNavigateSettings={() => navigate('/dashboard/settings')}
+        onToggleTheme={() => {}}
+        onShareDashboard={sessions.length > 0 ? async () => {
+          const latest = sessions[0]
+          if (!latest?.response) return
+          try {
+            const r = await shareDashboard({
+              query: latest.query,
+              charts_data: latest.response.charts as unknown as Record<string, unknown>[],
+              insights: latest.response.insights,
+              follow_up_suggestions: latest.response.follow_up_suggestions,
+              confidence_score: latest.response.confidence_score,
+              confidence_label: latest.response.confidence_label,
+            })
+            const url = `${window.location.origin}/d/${r.share_id}`
+            await navigator.clipboard.writeText(url)
+            toast({ title: 'Link copied!', description: 'Anyone with this link can view this dashboard.' })
+          } catch {
+            toast({ title: 'Share failed', variant: 'destructive' })
+          }
+        } : undefined}
+        onRunQuery={q => { setQuery(q); setTimeout(handleSubmit, 100) }}
+        isDark={false}
+        hasDashboard={sessions.length > 0}
       />
     </div>
   )

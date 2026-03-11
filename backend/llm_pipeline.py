@@ -22,6 +22,7 @@ from config import settings
 from database import execute_llm_sql
 from models import QueryResponse
 from prompts import (
+    EXECUTIVE_SUMMARY_PROMPT,
     EXPLAIN_CHART_PROMPT,
     INSIGHT_AND_FOLLOWUP_PROMPT,
     SCHEMA_AWARE_SQL_RETRY_PROMPT,
@@ -310,3 +311,21 @@ async def run_query_pipeline(
         anomalies=anomalies,
         featured_chart_id=featured_chart_id,
     )
+
+
+async def generate_executive_summary(
+    query: str,
+    insights: list[str],
+    charts_data: list[dict],
+) -> str:
+    charts_summary = "\n".join(
+        f"- {c.get('title', '')} ({c.get('chart_type', '')}): {c.get('description', '')}"
+        for c in charts_data[:4]
+    ) or "No chart data available."
+    insights_text = "\n".join(f"- {i}" for i in insights[:6]) or "No insights available."
+    prompt = EXECUTIVE_SUMMARY_PROMPT.format(
+        query=query,
+        insights=insights_text,
+        charts_summary=charts_summary,
+    )
+    return await _chat_text([{"role": "user", "content": prompt}], temperature=0.35)

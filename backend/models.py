@@ -87,6 +87,24 @@ class ExplainChartRequest(BaseModel):
     data_sample: list[dict]
     original_query: str
 
+class ShareRequest(BaseModel):
+    query: str
+    charts_data: list[dict] = []
+    insights: list[str] = []
+    follow_up_suggestions: list[str] = []
+    confidence_score: Optional[int] = None
+    confidence_label: Optional[str] = None
+
+
+class ShareResponse(BaseModel):
+    share_id: str
+    url: str
+
+
+class ExecSummaryRequest(BaseModel):
+    query: str
+    insights: list[str] = []
+    charts_data: list[dict] = []  # lightweight data summary from charts
 
 # ── CSV upload models ──────────────────────────────────────────
 class ColumnInfo(BaseModel):

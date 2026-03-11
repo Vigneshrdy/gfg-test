@@ -16,6 +16,7 @@ from database import close_db, init_db
 from routers.auth_router import router as auth_router
 from routers.query_router import router as query_router
 from routers.schema_router import router as schema_router
+from routers.share_router import router as share_router
 from routers.upload_router import router as upload_router
 
 logging.basicConfig(
@@ -55,3 +56,4 @@ app.include_router(auth_router, prefix="/api/auth")
 app.include_router(query_router, prefix="/api")
 app.include_router(upload_router, prefix="/api")
 app.include_router(schema_router, prefix="/api")
+app.include_router(share_router, prefix="/api")

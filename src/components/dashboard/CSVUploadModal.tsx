@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 interface CSVUploadModalProps {
   open: boolean
   onClose: () => void
-  onSuccess: (filename: string, schema: SchemaColumn[], tableName: string, schemaDescription: string) => void
+  onSuccess: (filename: string, schema: SchemaColumn[], tableName: string, schemaDescription: string, rowCount?: number) => void
 }
 
 type Step = 'drop' | 'preview' | 'processing' | 'done'
@@ -98,7 +98,7 @@ export default function CSVUploadModal({ open, onClose, onSuccess }: CSVUploadMo
       setTimeout(() => {
         setStep('done')
         toast({ title: `"${file.name}" uploaded successfully!`, description: `${res.row_count} rows indexed.` })
-        onSuccess(file.name, res.schema, res.table_name, res.schema_description ?? '')
+        onSuccess(file.name, res.schema, res.table_name, res.schema_description ?? '', res.row_count)
       }, 500)
     } catch (err) {
       clearInterval(interval)

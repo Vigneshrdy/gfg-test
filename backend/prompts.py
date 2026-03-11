@@ -224,3 +224,31 @@ Keep it conversational, specific, and under 120 words total.
 Do NOT use bullet points — write flowing paragraphs.
 Return ONLY the explanation text, nothing else.
 """.strip()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Executive Summary
+# ──────────────────────────────────────────────────────────────────────────────
+EXECUTIVE_SUMMARY_PROMPT = """
+You are a McKinsey-style business analyst writing a concise executive brief.
+
+## ORIGINAL BUSINESS QUESTION:
+{query}
+
+## KEY INSIGHTS FROM THE DATA:
+{insights}
+
+## DATA SUMMARY FROM CHARTS:
+{charts_summary}
+
+## YOUR TASK:
+Write a crisp executive summary in exactly 3-4 sentences.
+Requirements:
+- Include specific numbers, percentage changes, and named entities from the data
+- State the primary trend direction clearly
+- Name 1-2 notable categories, regions, or time periods that stand out
+- End with one concrete business recommendation
+
+Tone: authoritative, direct, data-forward — like a Bloomberg brief or McKinsey bullet.
+Do NOT use bullet points. Return ONLY the paragraph text, no headers or labels.
+""".strip()

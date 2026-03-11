@@ -128,3 +128,38 @@ export async function explainChart(
   const data = await handleResponse<{ explanation: string }>(res)
   return data.explanation
 }
+
+export async function shareDashboard(payload: {
+  query: string
+  charts_data: Record<string, unknown>[]
+  insights: string[]
+  follow_up_suggestions: string[]
+  confidence_score?: number
+  confidence_label?: string
+}): Promise<{ share_id: string; url: string }> {
+  const res = await fetch(`${API_BASE}/api/share`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  })
+  return handleResponse(res)
+}
+
+export async function getSharedDashboard(shareId: string): Promise<Record<string, unknown>> {
+  const res = await fetch(`${API_BASE}/api/share/${encodeURIComponent(shareId)}`)
+  return handleResponse(res)
+}
+
+export async function getExecutiveSummary(
+  query: string,
+  insights: string[],
+  chartsData: Record<string, unknown>[],
+): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/executive-summary`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ query, insights, charts_data: chartsData }),
+  })
+  const data = await handleResponse<{ summary: string }>(res)
+  return data.summary
+}

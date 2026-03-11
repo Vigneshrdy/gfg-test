@@ -4,7 +4,17 @@
 
 @layer base {
   :root {
-    /* === New teal color system === */
+    --font-base: 'JetBrains Mono', 'JetBrains Mono NL', monospace;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+    --radius-xl: 14px;
+    --theme-transition: background-color 0.25s ease, color 0.25s ease,
+                        border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  /* ===== DARK THEME (default) ===== */
+  :root, [data-theme="dark"] {
     --bg-void: #080B0E;
     --bg-base: #0D1117;
     --bg-raised: #131920;
@@ -34,22 +44,16 @@
     --text-primary: #E8EDF2;
     --text-secondary: #8FA3B8;
     --text-muted: #4F6478;
+    --text-tertiary: #4F6478;
     --text-disabled: #2D3D4D;
     --text-accent: #2DD4BF;
     --text-inverse: #080B0E;
-
-    --font-base: 'JetBrains Mono', 'JetBrains Mono NL', monospace;
-
-    --radius-sm: 4px;
-    --radius-md: 6px;
-    --radius-lg: 10px;
-    --radius-xl: 14px;
 
     --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3);
     --shadow-modal: 0 8px 40px rgba(0,0,0,0.6);
     --shadow-accent: 0 0 20px rgba(45,212,191,0.15), 0 0 60px rgba(45,212,191,0.05);
 
-    /* shadcn/ui CSS variables (mapped to new system) */
+    /* shadcn/ui (dark) */
     --background: 216 20% 7%;
     --foreground: 210 30% 94%;
     --card: 215 18% 10%;
@@ -74,9 +78,10 @@
 }
 
 @layer base {
-  * {
+  *, *::before, *::after {
     @apply border-border;
     box-sizing: border-box;
+    transition: var(--theme-transition);
   }
 
   html {
@@ -100,7 +105,7 @@
     background: var(--bg-void);
   }
   ::-webkit-scrollbar-thumb {
-    background: #1C2730;
+    background: var(--border-strong);
     border-radius: 10px;
   }
   ::-webkit-scrollbar-thumb:hover {

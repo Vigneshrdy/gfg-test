@@ -31,6 +31,17 @@ async def init_db() -> None:
     )
     logger.info("MySQL connection pool initialised (%s@%s/%s)", settings.DB_USER, settings.DB_HOST, settings.DB_NAME)
 
+    # Ensure shared_dashboards table exists
+    async with _pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("""
+                CREATE TABLE IF NOT EXISTS shared_dashboards (
+                    share_id VARCHAR(16) NOT NULL PRIMARY KEY,
+                    payload  LONGTEXT    NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+
 
 async def close_db() -> None:
     global _pool

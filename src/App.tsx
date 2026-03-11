@@ -8,7 +8,9 @@ import SignupPage from './pages/SignupPage'
 import DashboardPage from './pages/DashboardPage'
 import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
+import SharedDashboardPage from './pages/SharedDashboardPage'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+import { useTheme } from './components/ThemeToggle'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,6 +22,7 @@ const queryClient = new QueryClient({
 })
 
 export default function App() {
+  useTheme() // initialize theme attribute on <html> from localStorage
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -52,6 +55,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/d/:shareId" element={<SharedDashboardPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Toaster />
